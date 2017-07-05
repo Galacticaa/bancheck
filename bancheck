@@ -10,6 +10,13 @@ PtcAgent="pokemongo/1 CFNetwork/758.5.3 Darwin/15.6.0"
 PogoUrl="https://pgorelease.nianticlabs.com/plfe/version"
 PtcUrl="https://sso.pokemon.com/sso/login?service=https%3A%2F%2Fsso.pokemon.com%2Fsso%2Foauth2.0%2FcallbackAuthorize"
 
+echo "╔══════════════════════════════════════╦═══════════════╗"
+echo "║  Ban Checker for PTC and Pokemon GO  ║ Version 1.0.0 ║"
+echo "║══════════════════════════════════════╩═══════════════║"
+echo "║        https://github.com/Galacticaa/bancheck        ║"
+echo "╚══════════════════════════════════════════════════════╝"
+echo
+
 if [ ! -f "$ProxyFile" ]; then
     echo "Could not find ${ProxyFile}!"
 
@@ -45,7 +52,7 @@ else
 fi
 
 echo
-echo "Beginning PoGo/PTC ban check for ~${total} proxies..."
+echo "Beginning check for ~${total} proxies..."
 
 declare -i pogo_fail=0
 declare -i pogo_bans=0
