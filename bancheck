@@ -27,29 +27,47 @@
 Timeout=5
 MaxDelay=5
 MaxRetries=3
+ProxyFile=proxies.txt
 
 UserAgent="pokemongo/1 CFNetwork/758.5.3 Darwin/15.6.0"
 PogoUrl="https://pgorelease.nianticlabs.com/plfe/version"
 PtcUrl="https://sso.pokemon.com/sso/login?service=https%3A%2F%2Fsso.pokemon.com%2Fsso%2Foauth2.0%2FcallbackAuthorize"
 
-if [ ! -f proxies.txt ]; then
-    echo "Could not find file proxies.txt! Aborting."
-    exit
+if [ ! -f "$ProxyFile" ]; then
+    echo "Could not find ${ProxyFile}!"
+
+    read -p "Continue checking with external IP? [y/N] " response
+    case "$response" in
+        [yY]|[yY][eE][sS])
+            SKIP_PROXY=true
+            ProxyFile='noproxy'
+            ;;
+        *)
+            echo "Aborting."
+            exit
+            ;;
+    esac
+else SKIP_PROXY=false; fi
+
+if [ "$SKIP_PROXY" = true ]; then
+    total=1
+    longest=10
+else
+    for file in proxies_bad.txt proxies_banned.txt proxies_good.txt; do
+        if [ -f $file ]; then
+            read -rp "Remove ${file} before starting? [y/N] " response
+            case "$response" in
+                [yY])
+                    rm $file && echo "Successfully removed ${file}"
+                    ;;
+            esac
+        fi
+    done
+
+    total=$(wc -l < "$ProxyFile")
+    longest=$(wc -L < "$ProxyFile")
+    ProxyFile=$(cat "$ProxyFile")
 fi
-
-for file in proxies_bad.txt proxies_banned.txt proxies_good.txt; do
-    if [ -f $file ]; then
-        read -rp "Remove ${file} before starting? [y/N] " response
-        case "$response" in
-            [yY])
-                rm $file && echo "Successfully removed ${file}"
-                ;;
-        esac
-    fi
-done
-
-total=$(wc -l < proxies.txt)
-longest=$(wc -L < proxies.txt)
 
 echo
 echo "Beginning PoGo/PTC ban check for ~${total} proxies..."
@@ -62,7 +80,7 @@ declare -i total=0
 
 printf "\n %-${longest}s   PoGo [ Status ]  PTC [ Status ]\n" 'Proxy'
 
-while read proxy; do
+for proxy in $ProxyFile; do
     BAD=false
     BAN=false
 
@@ -72,7 +90,11 @@ while read proxy; do
     sleep $[($RANDOM % $MaxDelay) + 1]s
 
     # Begin PoGo check
-    response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PogoUrl)
+    if [ "$SKIP_PROXY" = false ]; then
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PogoUrl)
+    else
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries $PogoUrl)
+    fi
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
         status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
@@ -87,7 +109,11 @@ while read proxy; do
     sleep $[($RANDOM % $MaxDelay) + 1]s
 
     # Begin PTC check
-    response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PtcUrl)
+    if [ "$SKIP_PROXY" = false ]; then
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PtcUrl)
+    else
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries $PtcUrl)
+    fi
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
         status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
@@ -99,19 +125,24 @@ while read proxy; do
         echo " [HTTP:${status}]"
     else BAD=true; ptc_fail+=1; printf " FAIL [CURL:%3s]\n" $exit_code; fi
 
-    if $BAD; then
-        echo "$proxy" >> proxies_bad.txt
-    elif $BAN; then
-        echo "$proxy" >> proxies_banned.txt
-    else
-        echo "$proxy" >> proxies_good.txt
+    # Output to good/bad files
+    if [ "$SKIP_PROXY" = false ]; then
+        if $BAD; then
+            echo "$proxy" >> proxies_bad.txt
+        elif $BAN; then
+            echo "$proxy" >> proxies_banned.txt
+        else
+            echo "$proxy" >> proxies_good.txt
+        fi
     fi
 
     total+=1
-done < proxies.txt
+done
 
 echo
 echo "Proxy check complete!"
+
+if [ "$SKIP_PROXY" = true ]; then exit; fi
 
 pogo_good=$((total - pogo_bans - pogo_fail))
 ptc_good=$((total - ptc_bans - ptc_fail))
