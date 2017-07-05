@@ -1,5 +1,7 @@
-#!/bin/sh
-
+#!/bin/bash
+#
+# Licensed under the WTFPL: http://www.wtfpl.net/txt/copying/
+#
 # Checks a list of proxies for bans in PokemonGO and PTC.
 # Proxies should be stored in proxies.txt, one per line.
 #
@@ -51,17 +53,27 @@ while read proxy; do
 
     sleep $[($RANDOM % 5) + 1]s
 
-    if curl -sA "$UserAgent" -x "$proxy" $PogoUrl | grep -q 403
-    then BAD=true; pogo_fail+=1; echo -n ' FAIL '
-    else echo -n ' PASS '
-    fi
+    # Begin PoGo check
+    response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -x "$proxy" $PogoUrl)
+    if [ $? -eq 0]; then
+        status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
+
+        if [ $status -eq 403 ]; then BAD=true; pogo_fail+=1; echo -n ' FAIL'
+        elif [ $status -eq 200 ]; then echo -n ' PASS'
+        else BAD=true; pogo_fail+=1; echo -n ' FAIL'; fi
+    else BAD=true; pogo_fail+=1; echo -n ' FAIL'; fi
 
     sleep $[($RANDOM % 5) + 1]s
 
-    if curl -s -A "$UserAgent" -x "$proxy" $PtcUrl | grep -q 409
-    then BAD=true; ptc_fail+=1; echo ' FAIL'
-    else echo ' PASS'
-    fi
+    # Begin PTC check
+    response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -x "$proxy" $PtcUrl)
+    if [ $? -eq 0 ]; then
+        status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
+
+        if [ $status -eq 409 ]; then BAD=true; ptc_fail+=1; echo ' FAIL'
+        elif [ $status -eq 200 ]; then echo ' PASS'
+        else BAD=true; ptc_fail+=1; echo ' FAIL'; fi
+    else BAD=true; ptc_fail+=1; echo ' FAIL'; fi
 
     if $BAD; then
         echo "$proxy" >> proxies_bad.txt
