@@ -29,7 +29,8 @@ MaxDelay=5
 MaxRetries=3
 ProxyFile=proxies.txt
 
-UserAgent="pokemongo/1 CFNetwork/758.5.3 Darwin/15.6.0"
+PogoAgent="Niantic App"
+PtcAgent="pokemongo/1 CFNetwork/758.5.3 Darwin/15.6.0"
 PogoUrl="https://pgorelease.nianticlabs.com/plfe/version"
 PtcUrl="https://sso.pokemon.com/sso/login?service=https%3A%2F%2Fsso.pokemon.com%2Fsso%2Foauth2.0%2FcallbackAuthorize"
 
@@ -91,9 +92,9 @@ for proxy in $ProxyFile; do
 
     # Begin PoGo check
     if [ "$SKIP_PROXY" = false ]; then
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PogoUrl)
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PogoAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PogoUrl)
     else
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries $PogoUrl)
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PogoAgent" -m $Timeout --retry $MaxRetries $PogoUrl)
     fi
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
@@ -110,9 +111,9 @@ for proxy in $ProxyFile; do
 
     # Begin PTC check
     if [ "$SKIP_PROXY" = false ]; then
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PtcUrl)
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PtcAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PtcUrl)
     else
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$UserAgent" -m $Timeout --retry $MaxRetries $PtcUrl)
+        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PtcAgent" -m $Timeout --retry $MaxRetries $PtcUrl)
     fi
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
