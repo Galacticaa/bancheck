@@ -1,0 +1,85 @@
+#!/bin/sh
+
+# Checks a list of proxies for bans in PokemonGO and PTC.
+# Proxies should be stored in proxies.txt, one per line.
+#
+# Use the following format:
+# protocol://user:password@ip:port
+#
+# The script will append proxies to proxies_[good|bad].txt
+# You'll have the option to clear those before it starts.
+#
+# To adjust the time between proxy checks, adjust MaxDelay.
+#
+
+MaxDelay=5
+
+UserAgent="pokemongo/1 CFNetwork/758.5.3 Darwin/15.6.0"
+PogoUrl="https://pgorelease.nianticlabs.com/plfe/version"
+PtcUrl="https://sso.pokemon.com/sso/login?service=https%3A%2F%2Fsso.pokemon.com%2Fsso%2Foauth2.0%2FcallbackAuthorize"
+
+if [ ! -f proxies.txt ]; then
+    echo "Could not find file proxies.txt! Aborting."
+    exit
+fi
+
+for file in proxies_bad.txt proxies_good.txt; do
+    if [ -f $file ]; then
+        read -rp "Remove ${file} before starting? [y/N] " response
+        case "$response" in
+            [yY])
+                rm $file && echo "Successfully removed ${file}"
+                ;;
+        esac
+    fi
+done
+
+total=$(wc -l < proxies.txt)
+longest=$(wc -L < proxies.txt)
+
+echo
+echo "Beginning PoGo/PTC ban check for ${total} proxies..."
+
+declare -i pogo_fail
+declare -i ptc_fail
+
+printf "\n %-${longest}s   PoGo   PTC\n" 'Proxy'
+
+while read proxy; do
+    BAD=false
+    printf " %-${longest}s  " $proxy
+
+    sleep $[($RANDOM % 5) + 1]s
+
+    if curl -sA "$UserAgent" -x "$proxy" $PogoUrl | grep -q 403
+    then BAD=true; pogo_fail+=1; echo -n ' FAIL '
+    else echo -n ' PASS '
+    fi
+
+    sleep $[($RANDOM % 5) + 1]s
+
+    if curl -s -A "$UserAgent" -x "$proxy" $PtcUrl | grep -q 409
+    then BAD=true; ptc_fail+=1; echo ' FAIL'
+    else echo ' PASS'
+    fi
+
+    if $BAD; then
+        echo "$proxy" >> proxies_bad.txt
+    else
+        echo "$proxy" >> proxies_good.txt
+    fi
+done < proxies.txt
+
+echo
+echo "Proxy check complete!"
+if (( pogo_fail > 0 )); then
+    echo "$pogo_fail of $total proxies are banned from PokemonGO."
+else
+    echo "No proxies are banned from PokemonGO!"
+fi
+
+if (( ptc_fail > 0 )); then
+    echo "$ptc_fail of $total proxies are banned from PTC."
+else
+    echo "No proxies are banned from PTC!"
+fi
