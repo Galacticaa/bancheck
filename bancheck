@@ -5,8 +5,11 @@
 # Checks a list of proxies for bans in PokemonGO and PTC.
 # Proxies should be stored in proxies.txt, one per line.
 #
-# Use the following format:
+# Proxies must be in one of the following formats:
+# protocol://ip:port
 # protocol://user:password@ip:port
+#
+# If you don't specify protocol, curl will normally use HTTP.
 #
 # Proxies are added to proxies_[good|bad|banned].txt based on
 # whether they receive a 200 (good), 403/9 (banned) or other.
@@ -45,12 +48,13 @@ total=$(wc -l < proxies.txt)
 longest=$(wc -L < proxies.txt)
 
 echo
-echo "Beginning PoGo/PTC ban check for ${total} proxies..."
+echo "Beginning PoGo/PTC ban check for ~${total} proxies..."
 
-declare -i pogo_fail
-declare -i pogo_bans
-declare -i ptc_fail
-declare -i ptc_bans
+declare -i pogo_fail=0
+declare -i pogo_bans=0
+declare -i ptc_fail=0
+declare -i ptc_bans=0
+declare -i total=0
 
 printf "\n %-${longest}s   PoGo [ Status ]  PTC [ Status ]\n" 'Proxy'
 
@@ -58,6 +62,7 @@ while read proxy; do
     BAD=false
     BAN=false
 
+    proxy=$(echo "$proxy" | tr -d '\r')
     printf " %-${longest}s  " $proxy
 
     sleep $[($RANDOM % 5) + 1]s
@@ -97,6 +102,8 @@ while read proxy; do
     else
         echo "$proxy" >> proxies_good.txt
     fi
+
+    total+=1
 done < proxies.txt
 
 echo
