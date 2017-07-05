@@ -42,29 +42,27 @@ if [ ! -f "$ProxyFile" ]; then
         [yY]|[yY][eE][sS])
             SKIP_PROXY=true
             ProxyFile='noproxy'
+            longest=10
+            total=1
             ;;
         *)
             echo "Aborting."
             exit
             ;;
     esac
-else SKIP_PROXY=false; fi
-
-if [ "$SKIP_PROXY" = true ]; then
-    total=1
-    longest=10
 else
     for file in proxies_bad.txt proxies_banned.txt proxies_good.txt; do
         if [ -f $file ]; then
             read -rp "Remove ${file} before starting? [y/N] " response
             case "$response" in
-                [yY])
+                [yY]|[yY][eE][sS])
                     rm $file && echo "Successfully removed ${file}"
                     ;;
             esac
         fi
     done
 
+    SKIP_PROXY=false
     total=$(wc -l < "$ProxyFile")
     longest=$(wc -L < "$ProxyFile")
     ProxyFile=$(cat "$ProxyFile")
@@ -85,17 +83,18 @@ for proxy in $ProxyFile; do
     BAD=false
     BAN=false
 
-    proxy=$(echo "$proxy" | tr -d '\r')
+    proxy_params="-sw 'HTTP_STATUS:%{http_code}' -m ${Timeout} --retry ${MaxRetries}"
+    if [ "$SKIP_PROXY" = false ]; then
+        proxy_params+=" -x ${proxy}"
+        proxy=$(echo "$proxy" | tr -d '\r')
+    fi
+
     printf " %-${longest}s  " $proxy
 
     sleep $[($RANDOM % $MaxDelay) + 1]s
 
     # Begin PoGo check
-    if [ "$SKIP_PROXY" = false ]; then
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PogoAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PogoUrl)
-    else
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PogoAgent" -m $Timeout --retry $MaxRetries $PogoUrl)
-    fi
+    response=$(curl $proxy_params -A "$PogoAgent" $PogoUrl)
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
         status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
@@ -110,11 +109,7 @@ for proxy in $ProxyFile; do
     sleep $[($RANDOM % $MaxDelay) + 1]s
 
     # Begin PTC check
-    if [ "$SKIP_PROXY" = false ]; then
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PtcAgent" -m $Timeout --retry $MaxRetries -x "$proxy" $PtcUrl)
-    else
-        response=$(curl -sw 'HTTP_STATUS:%{http_code}' -A "$PtcAgent" -m $Timeout --retry $MaxRetries $PtcUrl)
-    fi
+    response=$(curl $proxy_params -A "$PtcAgent" $PtcUrl)
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
         status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
