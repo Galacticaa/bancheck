@@ -1,28 +1,4 @@
 #!/bin/bash
-#
-# Licensed under the WTFPL: http://www.wtfpl.net/txt/copying/
-#
-# Checks a list of proxies for bans in PokemonGO and PTC.
-# Proxies should be stored in proxies.txt, one per line.
-#
-# Proxies must be in one of the following formats:
-# protocol://ip:port
-# protocol://user:password@ip:port
-#
-# If you don't specify protocol, curl will normally use HTTP.
-#
-# Proxies are added to proxies_[good|bad|banned].txt based on
-# whether they receive a 200 (good), 403/9 (banned) or other.
-# You'll have the option to clear the files before it starts.
-#
-# Timeout is the maximum seconds for a check to complete.
-# To change the time between proxy checks, adjust MaxDelay.
-# In case of timeouts, curl will try again up to MaxRetries.
-#
-# Find me on Discord @Galactica#7178
-# Found this script useful? Buy me a beer:
-# https://www.paypal.me/GalacticaPogo
-#
 
 Timeout=5
 MaxDelay=5
@@ -33,6 +9,13 @@ PogoAgent="Niantic App"
 PtcAgent="pokemongo/1 CFNetwork/758.5.3 Darwin/15.6.0"
 PogoUrl="https://pgorelease.nianticlabs.com/plfe/version"
 PtcUrl="https://sso.pokemon.com/sso/login?service=https%3A%2F%2Fsso.pokemon.com%2Fsso%2Foauth2.0%2FcallbackAuthorize"
+
+echo "╔══════════════════════════════════════╦═══════════════╗"
+echo "║  Ban Checker for PTC and Pokemon GO  ║ Version 1.0.0 ║"
+echo "║══════════════════════════════════════╩═══════════════║"
+echo "║        https://github.com/Galacticaa/bancheck        ║"
+echo "╚══════════════════════════════════════════════════════╝"
+echo
 
 if [ ! -f "$ProxyFile" ]; then
     echo "Could not find ${ProxyFile}!"
@@ -69,7 +52,7 @@ else
 fi
 
 echo
-echo "Beginning PoGo/PTC ban check for ~${total} proxies..."
+echo "Beginning check for ~${total} proxies..."
 
 declare -i pogo_fail=0
 declare -i pogo_bans=0
