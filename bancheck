@@ -11,7 +11,7 @@ PogoUrl="https://pgorelease.nianticlabs.com/plfe/version"
 PtcUrl="https://sso.pokemon.com/sso/login?service=https%3A%2F%2Fsso.pokemon.com%2Fsso%2Foauth2.0%2FcallbackAuthorize"
 
 echo "╔══════════════════════════════════════╦═══════════════╗"
-echo "║  Ban Checker for PTC and Pokemon GO  ║ Version 1.0.0 ║"
+echo "║  Ban Checker for PTC and Pokemon GO  ║ Version 1.0.1 ║"
 echo "║══════════════════════════════════════╩═══════════════║"
 echo "║        https://github.com/Galacticaa/bancheck        ║"
 echo "╚══════════════════════════════════════════════════════╝"
