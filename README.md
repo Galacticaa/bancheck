@@ -9,17 +9,17 @@ The script will ask if you'd like to continue with your external IP instead.
 
 ### Checking a list of Proxies
 
-Proxies should be stored in proxies.txt (unless you change the `ProxyFile` option) with one proxy per line.
+Proxies should be stored in `proxies.txt` (unless you change the `ProxyFile` option) with one proxy per line.
 
 Proxies must be in one of the following formats:
 * `protocol://ip:port`
 * `protocol://user:password@ip:port`
 
-If you don't specify protocol, curl will normally use HTTP.
+If you don't specify the protocol, curl will usually default to HTTP.
 
 #### Output
 
-Proxies are added to a new file based the response received:
+Proxies are added to a new file based on the response received:
 
 * **200**: `proxies_good.txt`
 * **403** (PoGo) or **409** (PTC): `proxies_banned.txt`
@@ -36,7 +36,7 @@ Sets the maximum time curl will wait for a response when checking a proxy.
 Upper limit for the random delay between proxy checks.
 
 #### MaxRetries
-Number of times to retry if curl gets a timeout or a `5xx` error. Set to 0 to disable.
+Number of times to retry if curl gets a timeout or a `5xx` error. Set to `0` to disable.
 
 #### ProxyFile
 Change this to load proxies from a different file or directory.
